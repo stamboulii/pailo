@@ -1,0 +1,31 @@
+# Dependencies — never commit these
+node_modules/
+.pnpm-store/
+
+# Next.js build output
+.next/
+out/
+dist/
+build/
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Turbo cache
+.turbo/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

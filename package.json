@@ -1,0 +1,16 @@
+{
+  "name": "pailo",
+  "private": true,
+  "packageManager": "pnpm@10.7.1",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.20"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
