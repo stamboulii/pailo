@@ -1,0 +1,14 @@
+{
+  "name": "@pailo/ai",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "@google/generative-ai": "^0.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
