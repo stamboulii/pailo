@@ -16,7 +16,7 @@ export default async function PublishedStorePage({ params }: Props) {
     .from('stores')
     .select('id, name, config_json, published_at')
     .eq('subdomain', subdomain)
-    .not('published_at', 'is', null)  // only published stores
+    .not('published_at', 'is', null) 
     .single()
 
   if (!store) notFound()

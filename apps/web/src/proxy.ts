@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const PROTECTED = ["/dashboard", "/builder", "/store"]
+  const PROTECTED = ["/dashboard", "/editor", "/store"]
   const isProtected = PROTECTED.some(p => pathname.startsWith(p))
 
   const AUTH_ROUTES = ["/login"]

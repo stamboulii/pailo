@@ -4,13 +4,14 @@ import { Editor, Frame } from '@craftjs/core'
 import { HeroBlock } from './blocks/HeroBlock'
 import { ProductsBlock } from './blocks/ProductsBlock'
 import { CTABlock } from './blocks/CTABlock'
+import { useEffect, useState } from 'react'
 
 interface Props {
   canvas:    string | null
   storeName: string
 }
 
-export default function StoreRenderer({ canvas, storeName }: Props) {
+function StoreRendererInner({ canvas, storeName }: Props) {
   if (!canvas) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 24px',
@@ -25,14 +26,23 @@ export default function StoreRenderer({ canvas, storeName }: Props) {
 
   return (
     <div>
-      {/*
-        Editor in view-only mode — enabled=false means no drag/drop.
-        Frame reads the serialized JSON and renders the blocks.
-        Customers see the exact same visual as what was built in the editor.
-      */}
-       <Editor resolver={{ HeroBlock, ProductsBlock, CTABlock }} enabled={false}>
+      <Editor resolver={{ HeroBlock, ProductsBlock, CTABlock }} enabled={false}>
         <Frame json={canvas} />
       </Editor>
     </div>
   )
+}
+
+export default function StoreRenderer(props: Props) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
+  return <StoreRendererInner {...props} />
 }

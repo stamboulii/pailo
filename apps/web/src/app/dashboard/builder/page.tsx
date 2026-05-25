@@ -37,7 +37,7 @@ export default function DashboardBuilderPage() {
   }, [router, supabase])
 
   const handleOpenEditor = () => {
-    router.push('/builder/editor')
+    router.push('/editor')
   }
 
   if (loading) {
@@ -96,7 +96,7 @@ export default function DashboardBuilderPage() {
           <div style={{ fontWeight: 700, marginBottom: 4 }}>Store URL</div>
           <div style={{ color: '#888' }}>
             {typeof window !== 'undefined' 
-              ? `${window.location.origin}/app/(builder)/editor`
+              ? `${window.location.origin}/editor`
               : '...'}
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function DashboardBuilderPage() {
         }}>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>Live Store URL</div>
           <div>{typeof window !== 'undefined' 
-            ? `${window.location.origin}/app/(builder)/${store?.subdomain}`
+            ? `${window.location.origin}/${store?.subdomain}`
             : '...'}
           </div>
         </div>

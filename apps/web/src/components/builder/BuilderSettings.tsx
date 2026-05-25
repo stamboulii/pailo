@@ -4,8 +4,8 @@ import { useEditor } from '@craftjs/core'
 
 export default function BuilderSettings() {
   const { selected } = useEditor(state => {
-    const [nodeId] = state.events.selected
-    if (!nodeId) return { selected: null }
+    if (!state.events.selected) return { selected: null }
+    const nodeId = state.events.selected
     const node = state.nodes[nodeId]
     return {
       selected: {
