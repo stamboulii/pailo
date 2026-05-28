@@ -5,6 +5,16 @@ import type { Variant } from '../../types'
 
 interface Props { storeName?: string; bgColor?: string }
 
+function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 8, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>{label}</div>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', padding: '6px 8px', fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, fontFamily: 'inherit' }} />
+    </div>
+  )
+}
+
 export function HeaderBoldBlock({ storeName = 'My Store', bgColor = '#2d5be3' }: Props) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -21,21 +31,20 @@ export function HeaderBoldBlock({ storeName = 'My Store', bgColor = '#2d5be3' }:
   )
 }
 
-HeaderBoldBlock.craft = {
-  displayName: 'Header — Bold',
-  props: { storeName: 'My Store', bgColor: '#2d5be3' },
-  related: { settings: HeaderBoldSettings },
-}
-
 function HeaderBoldSettings() {
-  const { props }: { props: Props } = useNode() as any as { props: Props }
-  const { setProp }: { setProp: (cb: (p: Props) => void) => void } = (useNode() as any).actions as any
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as Props }))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <Field label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: Props) => { p.storeName = v })} />
       <Field label="Color" value={props.bgColor ?? '#2d5be3'} onChange={v => setProp((p: Props) => { p.bgColor = v })} type="color" />
     </div>
   )
+}
+
+HeaderBoldBlock.craft = {
+  displayName: 'Header — Bold',
+  props: { storeName: 'My Store', bgColor: '#2d5be3' },
+  related: { settings: HeaderBoldSettings },
 }
 
 export const HeaderBold: Variant = {
@@ -67,14 +76,4 @@ export const HeaderBold: Variant = {
     custom: {},
     isCanvas: false,
   }),
-}
-
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return (
-    <div>
-      <div style={{ fontSize: 8, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>{label}</div>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '6px 8px', fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, fontFamily: 'inherit' }} />
-    </div>
-  )
 }

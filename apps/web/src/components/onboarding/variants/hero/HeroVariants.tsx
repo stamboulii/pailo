@@ -124,12 +124,6 @@ export function HeroDarkBlock({
   )
 }
 
-HeroDarkBlock.craft = {
-  displayName: 'Hero — Dark',
-  props: { headline: 'Welcome to our store', subtext: 'Quality products made with care.', ctaText: 'Shop now', bgColor: '#1a1a2e', bgImage: '', bgType: 'color' },
-  related: { settings: HeroDarkSettings },
-}
-
 function HeroDarkSettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as HeroDarkProps }))
   return (
@@ -160,6 +154,12 @@ function HeroDarkSettings() {
       )}
     </div>
   )
+}
+
+HeroDarkBlock.craft = {
+  displayName: 'Hero — Dark',
+  props: { headline: 'Welcome to our store', subtext: 'Quality products made with care.', ctaText: 'Shop now', bgColor: '#1a1a2e', bgImage: '', bgType: 'color' },
+  related: { settings: HeroDarkSettings },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -203,12 +203,6 @@ export function HeroSplitBlock({
   )
 }
 
-HeroSplitBlock.craft = {
-  displayName: 'Hero — Split',
-  props: { headline: 'Welcome to our store', subtext: 'Handcrafted with love.', ctaText: 'Explore now', mediaUrl: '', mediaType: 'placeholder' },
-  related: { settings: HeroSplitSettings },
-}
-
 function HeroSplitSettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as HeroSplitProps }))
   return (
@@ -223,6 +217,12 @@ function HeroSplitSettings() {
       />
     </div>
   )
+}
+
+HeroSplitBlock.craft = {
+  displayName: 'Hero — Split',
+  props: { headline: 'Welcome to our store', subtext: 'Handcrafted with love.', ctaText: 'Explore now', mediaUrl: '', mediaType: 'placeholder' },
+  related: { settings: HeroSplitSettings },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -269,12 +269,6 @@ export function HeroFullwidthBlock({
   )
 }
 
-HeroFullwidthBlock.craft = {
-  displayName: 'Hero — Fullwidth',
-  props: { headline: 'The best products.', subtext: 'Fast delivery. Quality guaranteed.', ctaText: 'Get started', bgColor: '#e8601a', bgImage: '', bgType: 'color', overlayOpacity: 0.3 },
-  related: { settings: HeroFullwidthSettings },
-}
-
 function HeroFullwidthSettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as HeroFullwidthProps }))
   return (
@@ -305,6 +299,12 @@ function HeroFullwidthSettings() {
       </div>
     </div>
   )
+}
+
+HeroFullwidthBlock.craft = {
+  displayName: 'Hero — Fullwidth',
+  props: { headline: 'The best products.', subtext: 'Fast delivery. Quality guaranteed.', ctaText: 'Get started', bgColor: '#e8601a', bgImage: '', bgType: 'color', overlayOpacity: 0.3 },
+  related: { settings: HeroFullwidthSettings },
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -1,19 +1,26 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import type { SupabaseClientOptions } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function createClient(token?: string) {
   const cookieStore = await cookies()
 
-  const options = {
+  const options: SupabaseClientOptions<'public'> & {
     cookies: {
-      get(name) {
+      get(name: string): string | null
+      set(name: string, value: string, options: CookieOptions): void
+      remove(name: string, options: CookieOptions): void
+    }
+  } = {
+    cookies: {
+      get(name: string) {
         return cookieStore.get(name)?.value ?? null
       },
-      set(name, value, options) {
-        cookieStore.set(name, value, options)
+      set(name: string, value: string, opts: CookieOptions) {
+        cookieStore.set({ name, value, ...opts })
       },
-      remove(name, options) {
-        cookieStore.delete(name, options)
+      remove(name: string, opts: CookieOptions) {
+        cookieStore.set({ name, value: '', ...opts })
       }
     }
   }

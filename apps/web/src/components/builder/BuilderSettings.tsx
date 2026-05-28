@@ -4,8 +4,10 @@ import { useEditor } from '@craftjs/core'
 
 export default function BuilderSettings() {
   const { selected } = useEditor(state => {
-    if (!state.events.selected) return { selected: null }
     const nodeId = state.events.selected
+      ? [...state.events.selected][0]
+      : null
+    if (!nodeId) return { selected: null }
     const node = state.nodes[nodeId]
     return {
       selected: {
@@ -41,7 +43,11 @@ export default function BuilderSettings() {
                           marginBottom: 12 }}>
               {selected.name}
             </div>
-            {selected.Settings && <selected.Settings />}
+            {selected.Settings && (() => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const S = selected.Settings as any
+              return <S />
+            })()}
           </>
         ) : (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)',

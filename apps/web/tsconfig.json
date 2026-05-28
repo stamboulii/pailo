@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@craftjs/core": ["./node_modules/@craftjs/core/lib/index.d.ts"]
     }
   },
   "include": [

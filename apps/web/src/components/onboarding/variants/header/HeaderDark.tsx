@@ -3,15 +3,34 @@
 import { useNode } from '@craftjs/core'
 import type { Variant } from '../../types'
 
-// ─────────────────────────────────────────
-// CRAFT.JS BLOCK — rendered inside the editor
-// ─────────────────────────────────────────
 interface Props {
   storeName?: string
   links?: string[]
   bgColor?: string
 }
 
+// Reusable settings field
+function Field({ label, value, onChange, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string
+}) {
+  return (
+    <div>
+      <div style={{ fontSize: 8, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>
+        {label}
+      </div>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', padding: '6px 8px', fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, fontFamily: 'inherit' }}
+      />
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────
+// CRAFT.JS BLOCK — rendered inside the editor
+// ─────────────────────────────────────────
 export function HeaderDarkBlock({
   storeName = 'My Store',
   links = ['Home', 'Shop', 'About', 'Contact'],
@@ -50,6 +69,16 @@ export function HeaderDarkBlock({
   )
 }
 
+function HeaderDarkSettings() {
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as Props }))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Field label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: Props) => { p.storeName = v })} />
+      <Field label="Background" value={props.bgColor ?? '#111114'} onChange={v => setProp((p: Props) => { p.bgColor = v })} type="color" />
+    </div>
+  )
+}
+
 HeaderDarkBlock.craft = {
   displayName: 'Header — Dark',
   props: {
@@ -58,17 +87,6 @@ HeaderDarkBlock.craft = {
     bgColor: '#111114',
   },
   related: { settings: HeaderDarkSettings },
-}
-
-function HeaderDarkSettings() {
-  const { props }: { props: Props } = useNode() as any as { props: Props }
-  const { setProp }: { setProp: (cb: (p: Props) => void) => void } = (useNode() as any).actions as any
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <Field label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: Props) => { p.storeName = v })} />
-      <Field label="Background" value={props.bgColor ?? '#111114'} onChange={v => setProp((p: Props) => { p.bgColor = v })} type="color" />
-    </div>
-  )
 }
 
 // ─────────────────────────────────────────
@@ -110,23 +128,4 @@ export const HeaderDark: Variant = {
     custom: {},
     isCanvas: false,
   }),
-}
-
-// Reusable settings field
-function Field({ label, value, onChange, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string
-}) {
-  return (
-    <div>
-      <div style={{ fontSize: 8, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 3 }}>
-        {label}
-      </div>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '6px 8px', fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, fontFamily: 'inherit' }}
-      />
-    </div>
-  )
 }

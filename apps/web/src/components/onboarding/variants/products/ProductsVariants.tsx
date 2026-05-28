@@ -52,12 +52,6 @@ export function ProductsGridBlock({
   )
 }
 
-ProductsGridBlock.craft = {
-  displayName: 'Products — Grid',
-  props: { title: 'Our Products', bgColor: '#ffffff', products: DEFAULT_PRODUCTS },
-  related: { settings: ProductsGridSettings },
-}
-
 function ProductsGridSettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as ProductsGridProps }))
   const inputRef = useRef<HTMLInputElement>(null)
@@ -98,6 +92,12 @@ function ProductsGridSettings() {
       ))}
     </div>
   )
+}
+
+ProductsGridBlock.craft = {
+  displayName: 'Products — Grid',
+  props: { title: 'Our Products', bgColor: '#ffffff', products: DEFAULT_PRODUCTS },
+  related: { settings: ProductsGridSettings },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -148,12 +148,6 @@ export function ProductsListBlock({
   )
 }
 
-ProductsListBlock.craft = {
-  displayName: 'Products — List',
-  props: { title: 'Featured Items', products: DEFAULT_LIST_PRODUCTS },
-  related: { settings: ProductsListSettings },
-}
-
 function ProductsListSettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as ProductsListProps }))
   const supabase = createClient()
@@ -186,6 +180,12 @@ function ProductsListSettings() {
       ))}
     </div>
   )
+}
+
+ProductsListBlock.craft = {
+  displayName: 'Products — List',
+  props: { title: 'Featured Items', products: DEFAULT_LIST_PRODUCTS },
+  related: { settings: ProductsListSettings },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -233,12 +233,6 @@ export function ProductsMasonryBlock({
   )
 }
 
-ProductsMasonryBlock.craft = {
-  displayName: 'Products — Masonry',
-  props: { title: 'The Collection', products: DEFAULT_MASONRY },
-  related: { settings: ProductsMasonrySettings },
-}
-
 function ProductsMasonrySettings() {
   const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as ProductsMasonryProps }))
   const supabase = createClient()
@@ -268,6 +262,12 @@ function ProductsMasonrySettings() {
       ))}
     </div>
   )
+}
+
+ProductsMasonryBlock.craft = {
+  displayName: 'Products — Masonry',
+  props: { title: 'The Collection', products: DEFAULT_MASONRY },
+  related: { settings: ProductsMasonrySettings },
 }
 
 // ─────────────────────────────────────────────────────────────

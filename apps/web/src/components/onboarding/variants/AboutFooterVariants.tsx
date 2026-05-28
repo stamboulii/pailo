@@ -65,11 +65,9 @@ export function AboutSplitBlock({ storeName = 'Our Brand', body = 'We believe in
     </div>
   )
 }
-AboutSplitBlock.craft = { displayName: 'About — Split', props: { storeName: 'Our Brand', body: 'We believe in quality over quantity.', imageUrl: '' }, related: { settings: AboutSplitSettings } }
-function AboutSplitSettings() {
-  const { setProp }: { setProp: (cb: (p: AboutSplitProps) => void) => void } = (useNode() as any).actions as any
-  const { props }: { props: AboutSplitProps } = useNode() as any as { props: AboutSplitProps }
 
+function AboutSplitSettings() {
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as AboutSplitProps }))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropField label="Brand name" value={props.storeName ?? ''} onChange={v => setProp((p: AboutSplitProps) => { p.storeName = v })} />
@@ -78,11 +76,13 @@ function AboutSplitSettings() {
     </div>
   )
 }
+AboutSplitBlock.craft = { displayName: 'About — Split', props: { storeName: 'Our Brand', body: 'We believe in quality over quantity.', imageUrl: '' }, related: { settings: AboutSplitSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // ABOUT VARIANT 2 — Centered with icons
 // ─────────────────────────────────────────────────────────────
 interface AboutCenteredProps { storeName?: string; body?: string }
+
 export function AboutCenteredBlock({ storeName = 'Our Brand', body = 'We believe in quality over quantity. Every item we create is designed to last.' }: AboutCenteredProps) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -104,10 +104,9 @@ export function AboutCenteredBlock({ storeName = 'Our Brand', body = 'We believe
     </div>
   )
 }
-AboutCenteredBlock.craft = { displayName: 'About — Centered', props: { storeName: 'Our Brand', body: 'We believe in quality over quantity.' }, related: { settings: AboutCenteredSettings } }
+
 function AboutCenteredSettings() {
-  const { props }: { props: AboutCenteredProps } = useNode() as any as { props: AboutCenteredProps }
-  const { setProp }: { setProp: (cb: (p: AboutCenteredProps) => void) => void } = (useNode() as any).actions as any
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as AboutCenteredProps }))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropField label="Brand name" value={props.storeName ?? ''} onChange={v => setProp((p: AboutCenteredProps) => { p.storeName = v })} />
@@ -115,11 +114,13 @@ function AboutCenteredSettings() {
     </div>
   )
 }
+AboutCenteredBlock.craft = { displayName: 'About — Centered', props: { storeName: 'Our Brand', body: 'We believe in quality over quantity.' }, related: { settings: AboutCenteredSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // ABOUT VARIANT 3 — Dark stats banner
 // ─────────────────────────────────────────────────────────────
 interface AboutDarkProps { storeName?: string; body?: string }
+
 export function AboutDarkBlock({ storeName = 'Our Brand', body = 'Started as a small home project and grew into something we are proud of.' }: AboutDarkProps) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -142,10 +143,9 @@ export function AboutDarkBlock({ storeName = 'Our Brand', body = 'Started as a s
     </div>
   )
 }
-AboutDarkBlock.craft = { displayName: 'About — Dark', props: { storeName: 'Our Brand', body: 'Started as a small home project.' }, related: { settings: AboutDarkSettings } }
+
 function AboutDarkSettings() {
-  const { props }: { props: AboutDarkProps } = useNode() as any as { props: AboutDarkProps }
-  const { setProp }: { setProp: (cb: (p: AboutDarkProps) => void) => void } = (useNode() as any).actions as any
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as AboutDarkProps }))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropField label="Brand name" value={props.storeName ?? ''} onChange={v => setProp((p: AboutDarkProps) => { p.storeName = v })} />
@@ -153,11 +153,13 @@ function AboutDarkSettings() {
     </div>
   )
 }
+AboutDarkBlock.craft = { displayName: 'About — Dark', props: { storeName: 'Our Brand', body: 'Started as a small home project.' }, related: { settings: AboutDarkSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // FOOTER VARIANT 1 — Simple dark
 // ─────────────────────────────────────────────────────────────
 interface FooterDarkProps { storeName?: string }
+
 export function FooterDarkBlock({ storeName = 'My Store' }: FooterDarkProps) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -171,17 +173,18 @@ export function FooterDarkBlock({ storeName = 'My Store' }: FooterDarkProps) {
     </footer>
   )
 }
-FooterDarkBlock.craft = { displayName: 'Footer — Dark', props: { storeName: 'My Store' }, related: { settings: FooterDarkSettings } }
+
 function FooterDarkSettings() {
-  const { setProp }: { setProp: (cb: (p: FooterDarkProps) => void) => void } = (useNode() as any).actions as any
-  const { props }: { props: FooterDarkProps } = useNode() as any as { props: FooterDarkProps }
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as FooterDarkProps }))
   return <PropField label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: FooterDarkProps) => { p.storeName = v })} />
 }
+FooterDarkBlock.craft = { displayName: 'Footer — Dark', props: { storeName: 'My Store' }, related: { settings: FooterDarkSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // FOOTER VARIANT 2 — 4-column
 // ─────────────────────────────────────────────────────────────
 interface FooterColumnsProps { storeName?: string; tagline?: string }
+
 export function FooterColumnsBlock({ storeName = 'My Store', tagline = 'Quality products, delivered fast.' }: FooterColumnsProps) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -206,10 +209,9 @@ export function FooterColumnsBlock({ storeName = 'My Store', tagline = 'Quality 
     </footer>
   )
 }
-FooterColumnsBlock.craft = { displayName: 'Footer — Columns', props: { storeName: 'My Store', tagline: 'Quality products, delivered fast.' }, related: { settings: FooterColumnsSettings } }
+
 function FooterColumnsSettings() {
-  const { setProp }: { setProp: (cb: (p: FooterColumnsProps) => void) => void } = (useNode() as any).actions as any
-  const { props }: { props: FooterColumnsProps } = useNode() as any as { props: FooterColumnsProps }
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as FooterColumnsProps }))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropField label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: FooterColumnsProps) => { p.storeName = v })} />
@@ -217,11 +219,13 @@ function FooterColumnsSettings() {
     </div>
   )
 }
+FooterColumnsBlock.craft = { displayName: 'Footer — Columns', props: { storeName: 'My Store', tagline: 'Quality products, delivered fast.' }, related: { settings: FooterColumnsSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // FOOTER VARIANT 3 — Minimal light
 // ─────────────────────────────────────────────────────────────
 interface FooterMinimalProps { storeName?: string }
+
 export function FooterMinimalBlock({ storeName = 'My Store' }: FooterMinimalProps) {
   const { connectors: { connect, drag } } = useNode()
   return (
@@ -235,12 +239,12 @@ export function FooterMinimalBlock({ storeName = 'My Store' }: FooterMinimalProp
     </footer>
   )
 }
-FooterMinimalBlock.craft = { displayName: 'Footer — Minimal', props: { storeName: 'My Store' }, related: { settings: FooterMinimalSettings } }
+
 function FooterMinimalSettings() {
-  const { setProp }: { setProp: (cb: (p: FooterMinimalProps) => void) => void } = (useNode() as any).actions as any
-  const { props }: { props: FooterMinimalProps } = useNode() as any as { props: FooterMinimalProps }
+  const { actions: { setProp }, props } = useNode(n => ({ props: n.data.props as FooterMinimalProps }))
   return <PropField label="Store name" value={props.storeName ?? ''} onChange={v => setProp((p: FooterMinimalProps) => { p.storeName = v })} />
 }
+FooterMinimalBlock.craft = { displayName: 'Footer — Minimal', props: { storeName: 'My Store' }, related: { settings: FooterMinimalSettings } }
 
 // ─────────────────────────────────────────────────────────────
 // ABOUT VARIANT DEFINITIONS

@@ -1,7 +1,7 @@
 'use client'
 
 import { Editor, Frame } from '@craftjs/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RESOLVER } from '@/components/onboarding/sections'
 import BuilderSettings from '@/components/builder/BuilderSettings'
@@ -9,6 +9,19 @@ import BuilderTopbar from '@/components/builder/BuilderTopbar'
 import { HeroDarkBlock } from '@/components/onboarding/variants/hero/HeroVariants'
 import { ProductsGridBlock } from '@/components/onboarding/variants/products/ProductsVariants'
 import { FooterDarkBlock } from '@/components/onboarding/variants/AboutFooterVariants'
+import * as Craft from '@craftjs/core'
+console.log('All CraftJS exports:', Craft)
+console.log('Keys:', Object.keys(Craft))
+// Root container component required by Craft.js
+function RootContainer({ children }: { children?: ReactNode }) {
+  return <div style={{ minHeight: '100%' }}>{children as never}</div>
+}
+
+// Debug: log any undefined entries in the resolver
+if (typeof window !== 'undefined') {
+  const bad = Object.entries(RESOLVER).filter(([, v]) => !v)
+  if (bad.length) console.error('RESOLVER has undefined entries:', bad.map(([k]) => k))
+}
 
 export default function EditorCanvas() {
   const [savedCanvas, setSavedCanvas] = useState<string | null>(null)
@@ -28,9 +41,16 @@ export default function EditorCanvas() {
         .single()
 
       if (store) {
-        setStoreId(store.id)
-        setSavedCanvas(store.config_json?.canvas ?? null)
-      }
+  setStoreId(store.id)
+  
+  const canvas = store.config_json?.canvas
+  // CraftJS needs a JSON string, but Supabase returns jsonb as an object
+  setSavedCanvas(
+    canvas
+      ? typeof canvas === 'string' ? canvas : JSON.stringify(canvas)
+      : null
+  )
+}
       setLoading(false)
     }
     load()
@@ -49,7 +69,7 @@ export default function EditorCanvas() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column',
                   background: '#13131d', overflow: 'hidden' }}>
-      <Editor resolver={RESOLVER}>
+      <Editor resolver={{ ...RESOLVER, RootContainer }}>
         <BuilderTopbar storeId={storeId} />
         <div style={{ flex: 1, display: 'grid', overflow: 'hidden',
                       gridTemplateColumns: '48px 1fr 220px' }}>
@@ -73,17 +93,19 @@ export default function EditorCanvas() {
           </div>
 
           <div style={{ overflow: 'auto', background: '#ede8df', padding: 16 }}>
-            <Frame json={savedCanvas ?? undefined}>
-              <>
-                {!savedCanvas && (
-                  <>
-                    <HeroDarkBlock />
-                    <ProductsGridBlock />
-                    <FooterDarkBlock />
-                  </>
-                )}
-              </>
-            </Frame>
+            {savedCanvas ? (
+              // Restore saved canvas from JSON
+              <Frame json={savedCanvas} />
+            ) : (
+              // Fresh canvas with default blocks
+              <Frame>
+                <RootContainer>
+                  <HeroDarkBlock />
+                  <ProductsGridBlock />
+                  <FooterDarkBlock />
+                </RootContainer>
+              </Frame>
+            )}
           </div>
 
           <BuilderSettings />
