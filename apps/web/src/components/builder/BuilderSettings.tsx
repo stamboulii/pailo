@@ -9,6 +9,7 @@ export default function BuilderSettings() {
       : null
     if (!nodeId) return { selected: null }
     const node = state.nodes[nodeId]
+    if (!node) return { selected: null }
     return {
       selected: {
         name:     node.data.displayName,
