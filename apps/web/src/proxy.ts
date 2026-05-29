@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
           response.cookies.set(name, value, options)
         },
         remove(name: string, options: object) {
-          response.cookies.delete(name, options)
+          response.cookies.delete(name)
         },
       },
     }

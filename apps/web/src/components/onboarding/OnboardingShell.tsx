@@ -40,23 +40,22 @@ export default function OnboardingShell() {
 
   // ── Build Craft.js canvas JSON from selections ────────────
   const buildCraftCanvas = (): string => {
-    // Each selected variant provides a craftJson() object.
-    // We wrap them all in a root canvas container.
     const nodes: Record<string, object> = {
       ROOT: {
-        type: { resolvedName: 'div' },
-        props: { style: { display: 'flex', flexDirection: 'column' } },
-        displayName: 'div',
+        type: { resolvedName: 'RootContainer' },
+        props: {},
+        displayName: 'RootContainer',
         custom: {},
-        isCanvas: true,
+        isCanvas: false,
         nodes: [] as string[],
         linkedNodes: {},
+        parent: null,
       },
     }
 
     const rootNodes: string[] = []
 
-    ALL_SECTIONS.forEach((section, sectionIndex) => {
+    ALL_SECTIONS.forEach((section) => {
       const variant  = section.variants[selections[section.key]]
       const nodeId   = `node-${section.key}`
       const nodeData = variant.craftJson()

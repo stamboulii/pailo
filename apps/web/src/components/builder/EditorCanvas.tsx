@@ -2,6 +2,7 @@
 
 import { Editor, Frame } from '@craftjs/core'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { RESOLVER } from '@/components/onboarding/sections'
 import BuilderSettings from '@/components/builder/BuilderSettings'
@@ -18,6 +19,8 @@ function RootContainer({ children }: { children?: ReactNode }) {
 const RESOLVER_WITH_ROOT = { ...RESOLVER, RootContainer }
 
 export default function EditorCanvas() {
+  const searchParams = useSearchParams()
+  const urlStoreId = searchParams.get('storeId')
   const [savedCanvas, setSavedCanvas] = useState<string | null>(null)
   const [storeId, setStoreId]         = useState<string | null>(null)
   const [loading, setLoading]         = useState(true)
@@ -27,6 +30,29 @@ export default function EditorCanvas() {
   useEffect(() => {
     const load = async () => {
       try {
+        // If storeId is passed in URL (for testing), use it directly
+        if (urlStoreId) {
+          const { data: store, error: storeError } = await supabase
+            .from('stores')
+            .select('id, config_json')
+            .eq('id', urlStoreId)
+            .single()
+
+          if (storeError && storeError.code !== 'PGRST116') throw storeError
+
+          if (store) {
+            setStoreId(store.id)
+            const canvas = store.config_json?.canvas
+            setSavedCanvas(
+              canvas
+                ? typeof canvas === 'string' ? canvas : JSON.stringify(canvas)
+                : null
+            )
+          }
+          setLoading(false)
+          return
+        }
+
         const { data: { user }, error: authError } = await supabase.auth.getUser()
         if (authError) throw authError
         if (!user) { setLoading(false); return }
@@ -57,7 +83,7 @@ export default function EditorCanvas() {
       }
     }
     load()
-  }, [supabase])
+  }, [supabase, urlStoreId])
 
   if (loading) {
     return (

@@ -1,11 +1,7 @@
 'use client'
-// ─────────────────────────────────────────────────────────────
-// ABOUT + FOOTER VARIANTS
-// ─────────────────────────────────────────────────────────────
-
 import { useNode } from '@craftjs/core'
 import { createClient } from '@/lib/supabase/client'
-import type { Variant } from '../../types'
+import type { Variant } from '../types'
 
 // ── SHARED ────────────────────────────────────
 function PropField({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {

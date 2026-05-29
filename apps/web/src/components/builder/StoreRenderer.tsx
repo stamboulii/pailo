@@ -1,15 +1,20 @@
 'use client'
 
 import { Editor, Frame } from '@craftjs/core'
-import { HeroBlock } from './blocks/HeroBlock'
-import { ProductsBlock } from './blocks/ProductsBlock'
-import { CTABlock } from './blocks/CTABlock'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { RESOLVER } from '@/components/onboarding/sections'
 
 interface Props {
   canvas:    string | null
   storeName: string
 }
+
+// Must match the RootContainer registered in EditorCanvas
+function RootContainer({ children }: { children?: ReactNode }) {
+  return <div style={{ minHeight: '100vh' }}>{children as never}</div>
+}
+
+const STORE_RESOLVER = { ...RESOLVER, RootContainer }
 
 function StoreRendererInner({ canvas, storeName }: Props) {
   if (!canvas) {
@@ -25,11 +30,9 @@ function StoreRendererInner({ canvas, storeName }: Props) {
   }
 
   return (
-    <div>
-      <Editor resolver={{ HeroBlock, ProductsBlock, CTABlock }} enabled={false}>
-        <Frame json={canvas} />
-      </Editor>
-    </div>
+    <Editor resolver={STORE_RESOLVER} enabled={false}>
+      <Frame data={canvas} />
+    </Editor>
   )
 }
 
@@ -40,9 +43,7 @@ export default function StoreRenderer(props: Props) {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   return <StoreRendererInner {...props} />
 }
