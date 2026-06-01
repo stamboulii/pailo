@@ -1,8 +1,8 @@
 'use client'
 
-import { useNode } from '@craftjs/core'
+import { useNode, useEditor } from '@craftjs/core'
 import { useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/components/store/CartContext'
 import type { Variant } from '../../types'
 
 // ─────────────────────────────────────────────────────────────
@@ -11,15 +11,15 @@ import type { Variant } from '../../types'
 interface ProductsGridProps {
   title?: string
   bgColor?: string
-  products?: { 
-    name: string; 
-    price: string; 
-    emoji: string; 
-    imageUrl?: string;
-    stock?: number;
-    sku?: string;
-    available?: boolean;
-    desc?: string;
+  products?: {
+    name: string
+    price: string
+    emoji: string
+    imageUrl?: string
+    stock?: number
+    sku?: string
+    available?: boolean
+    desc?: string
   }[]
 }
 
@@ -35,41 +35,67 @@ export function ProductsGridBlock({
   products = DEFAULT_PRODUCTS,
 }: ProductsGridProps) {
   const { connectors: { connect, drag } } = useNode()
+  const { enabled } = useEditor((state) => ({ enabled: state.options.enabled }))
+  const { addItem, toggleCart } = useCart()
+
+  const handleAddToCart = (p: any, index: number) => {
+    if (!p.available || (p.stock ?? 0) <= 0) return
+    addItem({
+      id: String(p.id ?? `product-${index}`),
+      name: String(p.name ?? 'Produit'),
+      price: typeof p.price === 'number' ? p.price : Number.parseFloat(String(p.price ?? '0')) || 0,
+      emoji: String(p.emoji ?? '📦'),
+    })
+    toggleCart()
+  }
+
   return (
     <div ref={ref => { if (ref) connect(drag(ref)) }}
-      style={{ background: bgColor, padding: '48px 32px', cursor: 'move' }}>
+      style={{ background: bgColor, padding: '48px 32px', cursor: enabled ? 'move' : 'default' }}>
       <h2 style={{ fontSize: 28, fontWeight: 800, textAlign: 'center', marginBottom: 8 }}>{title}</h2>
       <p style={{ color: '#888', textAlign: 'center', marginBottom: 32 }}>Handpicked just for you</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-        {products.map((p, i) => (
-          <div key={i} style={{ background: '#f8f5ef', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ height: 140, background: '#eee9df', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              {p.imageUrl
-                ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-                : <span style={{ fontSize: 48 }}>{p.emoji}</span>
-              }
+        {products.map((p, i) => {
+          const price = typeof p.price === 'number' ? p.price.toFixed(2) : Number.parseFloat(String(p.price ?? '0')).toFixed(2)
+          const canAdd = p.available !== false && (p.stock ?? 0) > 0
+
+          return (
+            <div key={i} style={{ background: '#f8f5ef', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ height: 140, background: '#eee9df', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                {p.imageUrl
+                  ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                  : <span style={{ fontSize: 48 }}>{p.emoji}</span>
+                }
+              </div>
+              <div style={{ padding: '14px 16px' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{p.name}</div>
+                <div style={{ color: '#2d5be3', fontWeight: 700, fontSize: 16 }}>{price} TND</div>
+                {!enabled && (
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(p, i)}
+                    style={{
+                      marginTop: 10,
+                      width: '100%',
+                      background: canAdd ? '#111' : '#999',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: canAdd ? 'pointer' : 'not-allowed',
+                      opacity: canAdd ? 1 : 0.6,
+                    }}
+                    disabled={!canAdd}
+                  >
+                    {canAdd ? 'Add to cart' : 'Out of stock'}
+                  </button>
+                )}
+              </div>
             </div>
-             <div style={{ padding: '14px 16px' }}>
-               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{p.name}</div>
-               <div style={{ color: '#2d5be3', fontWeight: 700, fontSize: 16 }}>{p.price} TND</div>
-               <button style={{ 
-                 marginTop: 10, 
-                 width: '100%', 
-                 background: '#111', 
-                 color: 'white', 
-                 border: 'none', 
-                 padding: '8px', 
-                 borderRadius: 6, 
-                 fontSize: 12, 
-                 fontWeight: 700, 
-                 cursor: (!p.available || (p.stock ?? 0) <= 0) ? 'not-allowed' : 'pointer',
-                 opacity: (!p.available || (p.stock ?? 0) <= 0) ? 0.5 : 1
-               }}>
-                 Add to cart
-               </button>
-             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -85,7 +111,7 @@ function ProductsGridSettings() {
     const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const { data, error } = await supabase.storage.from('store-media').upload(path, file, { upsert: true })
     if (error || !data) return
-    const { data: { publicUrl } } = supabase.storage.from('store-media').getPublicUrl(data.path)
+    const { data: { publicUrl } } = await supabase.storage.from('store-media').getPublicUrl(data.path)
     setProp((p: ProductsGridProps) => {
       if (!p.products) return
       p.products[index] = { ...p.products[index], imageUrl: publicUrl }
@@ -95,43 +121,42 @@ function ProductsGridSettings() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <PropField label="Section title" value={props.title ?? ''} onChange={v => setProp((p: ProductsGridProps) => { p.title = v })} />
-       {(props.products ?? []).map((prod, i) => (
-         <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-           <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Product {i + 1}</div>
-           <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].name = v })} />
-           <div style={{ marginTop: 6 }}>
-             <PropField label="Price (TND)" value={prod.price} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].price = v })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="Description" value={prod.desc ?? ''} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].desc = v })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].sku = v })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
-               <input
-                 type="checkbox"
-                 checked={prod.available ?? true}
-                 onChange={(e) => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].available = e.target.checked })}
-               />
-               Available for purchase
-             </div>
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>Image</div>
-             {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
-             <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
-               {prod.imageUrl ? '↑ Replace' : '↑ Upload'}
-               <input type="file" accept="image/*" style={{ display: 'none' }}
-                 onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
-             </label>
-           </div>
-         </div>
-       ))}
+      {(props.products ?? []).map((prod, i) => (
+        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
+          <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Product {i + 1}</div>
+          <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].name = v })} />
+          <div style={{ marginTop: 6 }}>
+            <PropField label="Price (TND)" value={prod.price} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].price = v })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="Description" value={prod.desc ?? ''} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].desc = v })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].sku = v })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
+              <input
+                type="checkbox"
+                checked={prod.available ?? true}
+                onChange={(e) => setProp((p: ProductsGridProps) => { if (p.products) p.products[i].available = e.target.checked })}
+              />
+              Available for purchase
+            </div>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
+            <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
+              {prod.imageUrl ? '↑ Replace' : '↑ Upload'}
+              <input type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
+            </label>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -147,15 +172,15 @@ ProductsGridBlock.craft = {
 // ─────────────────────────────────────────────────────────────
 interface ProductsListProps {
   title?: string
-  products?: { 
-    name: string; 
-    desc: string; 
-    price: string; 
-    emoji: string; 
-    imageUrl?: string;
-    stock?: number;
-    sku?: string;
-    available?: boolean;
+  products?: {
+    name: string
+    desc: string
+    price: string
+    emoji: string
+    imageUrl?: string
+    stock?: number
+    sku?: string
+    available?: boolean
   }[]
 }
 
@@ -207,44 +232,44 @@ function ProductsListSettings() {
     const path = `products/${Date.now()}.${file.name.split('.').pop()}`
     const { data, error } = await supabase.storage.from('store-media').upload(path, file, { upsert: true })
     if (error || !data) return
-    const { data: { publicUrl } } = supabase.storage.from('store-media').getPublicUrl(data.path)
+    const { data: { publicUrl } } = await supabase.storage.from('store-media').getPublicUrl(data.path)
     setProp((p: ProductsListProps) => { if (p.products) p.products[index].imageUrl = publicUrl })
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <PropField label="Section title" value={props.title ?? ''} onChange={v => setProp((p: ProductsListProps) => { p.title = v })} />
-       {(props.products ?? []).map((prod, i) => (
-         <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-           <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Product {i + 1}</div>
-           <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].name = v })} />
-           <div style={{ marginTop: 6 }}><PropField label="Description" value={prod.desc} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].desc = v })} /></div>
-           <div style={{ marginTop: 6 }}><PropField label="Price" value={prod.price} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].price = v })} /></div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].sku = v })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
-               <input
-                 type="checkbox"
-                 checked={prod.available ?? true}
-                 onChange={(e) => setProp((p: ProductsListProps) => { if (p.products) p.products[i].available = e.target.checked })}
-               />
-               Available for purchase
-             </div>
-           </div>
-           <div style={{ marginTop: 6 }}>
-             {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
-             <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
-               {prod.imageUrl ? '↑ Replace image' : '↑ Upload image'}
-               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
-             </label>
-           </div>
-         </div>
-       ))}
+      {(props.products ?? []).map((prod, i) => (
+        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
+          <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Product {i + 1}</div>
+          <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].name = v })} />
+          <div style={{ marginTop: 6 }}><PropField label="Description" value={prod.desc} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].desc = v })} /></div>
+          <div style={{ marginTop: 6 }}><PropField label="Price" value={prod.price} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].price = v })} /></div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsListProps) => { if (p.products) p.products[i].sku = v })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
+              <input
+                type="checkbox"
+                checked={prod.available ?? true}
+                onChange={(e) => setProp((p: ProductsListProps) => { if (p.products) p.products[i].available = e.target.checked })}
+              />
+              Available for purchase
+            </div>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
+            <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
+              {prod.imageUrl ? '↑ Replace image' : '↑ Upload image'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
+            </label>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -260,16 +285,16 @@ ProductsListBlock.craft = {
 // ─────────────────────────────────────────────────────────────
 interface ProductsMasonryProps {
   title?: string
-  products?: { 
-    name: string; 
-    price: string; 
-    emoji: string; 
-    imageUrl?: string;
-    tall?: boolean;
-    stock?: number;
-    sku?: string;
-    available?: boolean;
-    desc?: string;
+  products?: {
+    name: string
+    price: string
+    emoji: string
+    imageUrl?: string
+    tall?: boolean
+    stock?: number
+    sku?: string
+    available?: boolean
+    desc?: string
   }[]
 }
 
@@ -317,43 +342,43 @@ function ProductsMasonrySettings() {
     const path = `products/${Date.now()}.${file.name.split('.').pop()}`
     const { data, error } = await supabase.storage.from('store-media').upload(path, file, { upsert: true })
     if (error || !data) return
-    const { data: { publicUrl } } = supabase.storage.from('store-media').getPublicUrl(data.path)
+    const { data: { publicUrl } } = await supabase.storage.from('store-media').getPublicUrl(data.path)
     setProp((p: ProductsMasonryProps) => { if (p.products) p.products[index].imageUrl = publicUrl })
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <PropField label="Section title" value={props.title ?? ''} onChange={v => setProp((p: ProductsMasonryProps) => { p.title = v })} />
-       {(props.products ?? []).map((prod, i) => (
-         <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-           <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Item {i + 1}</div>
-           <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].name = v })} />
-           <div style={{ marginTop: 6 }}><PropField label="Description" value={prod.desc ?? ''} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].desc = v })} /></div>
-           <div style={{ marginTop: 6 }}><PropField label="Price" value={prod.price} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].price = v })} /></div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].sku = v })} />
-           </div>
-           <div style={{ marginTop: 6 }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
-               <input
-                 type="checkbox"
-                 checked={prod.available ?? true}
-                 onChange={(e) => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].available = e.target.checked })}
-               />
-               Available for purchase
-             </div>
-           </div>
-           <div style={{ marginTop: 6 }}>
-             {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
-             <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
-               {prod.imageUrl ? '↑ Replace' : '↑ Upload'}
-               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
-             </label>
-           </div>
-         </div>
-       ))}
+      {(props.products ?? []).map((prod, i) => (
+        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
+          <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Item {i + 1}</div>
+          <PropField label="Name" value={prod.name} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].name = v })} />
+          <div style={{ marginTop: 6 }}><PropField label="Description" value={prod.desc ?? ''} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].desc = v })} /></div>
+          <div style={{ marginTop: 6 }}><PropField label="Price" value={prod.price} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].price = v })} /></div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="Stock" value={(prod.stock ?? 0).toString()} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].stock = parseInt(v) || 0 })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <PropField label="SKU" value={prod.sku ?? ''} onChange={v => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].sku = v })} />
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#333' }}>
+              <input
+                type="checkbox"
+                checked={prod.available ?? true}
+                onChange={(e) => setProp((p: ProductsMasonryProps) => { if (p.products) p.products[i].available = e.target.checked })}
+              />
+              Available for purchase
+            </div>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            {prod.imageUrl && <img src={prod.imageUrl} alt="" style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 4, marginBottom: 4 }} />}
+            <label style={{ display: 'block', padding: '5px', background: 'rgba(45,91,227,0.15)', border: '1px dashed rgba(45,91,227,0.4)', borderRadius: 4, color: '#2d5be3', fontSize: 10, cursor: 'pointer', textAlign: 'center', fontWeight: 700 }}>
+              {prod.imageUrl ? '↑ Replace' : '↑ Upload'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, i) }} />
+            </label>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -454,17 +479,15 @@ export const ProductsMasonry: Variant = {
   Preview: () => (
     <div style={{ background: '#111114', padding: '40px 32px' }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, textAlign: 'center', color: 'white', marginBottom: 24 }}>The Collection</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
-        {DEFAULT_MASONRY.map((p, i) => (
-          <div key={i} style={{ background: '#1a1a24', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ height: p.tall ? 150 : 110, background: '#2a2a3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>{p.emoji}</div>
-            <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'white', fontWeight: 700, fontSize: 12 }}>{p.name}</span>
-              <span style={{ color: '#2d5be3', fontWeight: 700 }}>{p.price} TND</span>
-            </div>
+      {DEFAULT_MASONRY.map((p, i) => (
+        <div key={i} style={{ background: '#1a1a24', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+          <div style={{ height: 150, background: '#2a2a3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>{p.emoji}</div>
+          <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'white', fontWeight: 700, fontSize: 12 }}>{p.name}</span>
+            <span style={{ color: '#2d5be3', fontWeight: 700 }}>{p.price} TND</span>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   ),
   craftJson: () => ({ type: { resolvedName: 'ProductsMasonryBlock' }, props: { title: 'The Collection', products: DEFAULT_MASONRY }, displayName: 'Products — Masonry', custom: {}, isCanvas: false }),
