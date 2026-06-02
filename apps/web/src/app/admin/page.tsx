@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import AdminSidebar from '../AdminSidebar'
+import AdminSidebar from './AdminSidebar'
 
 export default async function AdminPage() {
   const supabase = await createClient()

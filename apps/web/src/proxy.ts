@@ -31,6 +31,33 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Skip role-based redirection for API routes
+  if (pathname.startsWith('/api')) {
+    return response
+  }
+
+  // If user is logged in, check their role for admin redirection
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = profile?.role === 'super_admin'
+    const isAdminPath = pathname.startsWith('/admin')
+
+    // Redirect super_admin users to admin dashboard if they're not already in an admin path
+    if (isAdmin && !isAdminPath) {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+
+    // Redirect non-admin users away from admin paths
+    if (!isAdmin && isAdminPath) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
   const PROTECTED = ['/dashboard', '/editor']
   const isProtected = PROTECTED.some(p => pathname.startsWith(p))
 

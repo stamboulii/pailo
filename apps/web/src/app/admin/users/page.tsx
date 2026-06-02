@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import AdminSidebar from '../AdminSidebar'
 
@@ -16,18 +17,35 @@ export default async function AdminUsersPage() {
 
   if (profile?.role !== 'super_admin') redirect('/dashboard')
 
+  const adminClient = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  let authUserMap: Record<string, string> = {}
+  try {
+    const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+    if (error) throw error
+    authUserMap = Object.fromEntries(data.users.map((u) => [u.id, u.email ?? 'no-email']))
+  } catch (err) {
+    console.error('Error fetching auth users:', err)
+  }
+
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, full_name, role, is_active, created_at')
-    .order('created_at', { ascending: false })
 
-  const { data: authUsers } = await supabase.auth.admin.listUsers()
+  const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
 
-  const usersWithEmail = (profiles ?? []).map((p) => {
-    const authUser = (authUsers?.users ?? []).find((u) => u.id === p.id)
+  const usersWithEmail = Object.entries(authUserMap).map(([id, email]) => {
+    const profile = profileMap[id]
     return {
-      ...p,
-      email: authUser?.email ?? 'unknown',
+      id,
+      email,
+      full_name: profile?.full_name ?? '—',
+      role: profile?.role ?? 'unknown',
+      is_active: profile?.is_active ?? false,
+      created_at: profile?.created_at ?? '',
     }
   })
 
@@ -51,7 +69,7 @@ export default async function AdminUsersPage() {
             <tbody>
               {usersWithEmail.map((user) => (
                 <tr key={user.id} style={{ borderBottom: '1px solid rgba(17,17,20,0.04)' }}>
-                  <td style={{ padding: 16, fontWeight: 600 }}>{user.full_name ?? '—'}</td>
+                  <td style={{ padding: 16, fontWeight: 600 }}>{user.full_name}</td>
                   <td style={{ padding: 16, color: '#666', fontSize: 13 }}>{user.email}</td>
                   <td style={{ padding: 16 }}>
                     <span style={{
@@ -59,7 +77,7 @@ export default async function AdminUsersPage() {
                       borderRadius: 6,
                       fontSize: 11,
                       fontWeight: 600,
-                      background: user.role === 'super_admin' ? '#2d5be312' : '#88812',
+                      background: user.role === 'super_admin' ? '#2d5be312' : '#f0f0f0',
                       color: user.role === 'super_admin' ? '#2d5be3' : '#888',
                     }}>
                       {user.role}
