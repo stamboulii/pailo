@@ -2,6 +2,7 @@
 
 import { useNode, useEditor } from '@craftjs/core'
 import { useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/components/store/CartContext'
 import type { Variant } from '../../types'
 
@@ -45,6 +46,7 @@ export function ProductsGridBlock({
       name: String(p.name ?? 'Produit'),
       price: typeof p.price === 'number' ? p.price : Number.parseFloat(String(p.price ?? '0')) || 0,
       emoji: String(p.emoji ?? '📦'),
+      availableStock: typeof p.stock === 'number' ? p.stock : 99,
     })
     toggleCart()
   }

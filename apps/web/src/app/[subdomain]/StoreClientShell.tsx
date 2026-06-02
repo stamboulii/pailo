@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import StoreRenderer from '@/components/builder/StoreRenderer'
-import { CartProvider } from '@/components/store/CartContext'
-import CartDrawer from '@/components/store/CartDrawer'
-import CartFAB from '@/components/store/CartFAB'
+import { CartProvider, useCart } from '@/components/store/CartContext'
+import CartModal from '@/components/store/CartModal'
 
 interface Product {
   id: string
@@ -17,6 +16,50 @@ interface Props {
   canvas: string | null
   storeName: string
   products: Product[]
+}
+
+function CartButton() {
+  const { toggleCart, totalItems } = useCart()
+
+  return (
+    <button
+      type="button"
+      onClick={toggleCart}
+      style={{
+        position: 'fixed',
+        top: 16,
+        right: 16,
+        zIndex: 9999,
+        background: '#111',
+        color: 'white',
+        border: 'none',
+        borderRadius: 8,
+        padding: '10px 16px',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <span>🛒</span>
+      {totalItems > 0 && (
+        <span
+          style={{
+            background: '#e8601a',
+            color: 'white',
+            borderRadius: 999,
+            padding: '2px 8px',
+            fontSize: 11,
+            fontWeight: 800,
+          }}
+        >
+          {totalItems}
+        </span>
+      )}
+    </button>
+  )
 }
 
 export default function StoreClientShell({ canvas, storeName, products }: Props) {
@@ -34,20 +77,11 @@ export default function StoreClientShell({ canvas, storeName, products }: Props)
     )
   }
 
-  const cartProducts = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    emoji: p.emoji,
-  }))
-
   return (
     <CartProvider>
-      <div>
-        <StoreRenderer canvas={canvas} storeName={storeName} />
-      </div>
-      <CartFAB products={cartProducts} />
-      <CartDrawer />
+      <CartButton />
+      <StoreRenderer canvas={canvas} storeName={storeName} />
+      <CartModal />
     </CartProvider>
   )
 }

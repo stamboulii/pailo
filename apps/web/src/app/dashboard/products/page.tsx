@@ -20,11 +20,17 @@ export default async function ProductsPage() {
 
   if (!user) redirect('/login')
 
-  const { data: store } = await supabase
-    .from('stores')
-    .select('id, name')
-    .eq('user_id', user.id)
-    .single()
+   const { data: store, error: storeError } = await supabase
+     .from('stores')
+     .select('id, name')
+     .eq('user_id', user.id)
+     .maybeSingle()
+
+   if (storeError) {
+     console.error('Error fetching store:', storeError)
+     // Depending on how you want to handle, you might redirect or show an error
+     // For now, we'll treat it as no store
+   }
 
   if (!store) {
     return (

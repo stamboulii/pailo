@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 
 interface Product {
+  stock: number
   id: string
   name: string
   price: number

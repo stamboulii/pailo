@@ -68,19 +68,49 @@ export default function OrdersPage() {
   }, [store, filter, supabase])
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
+    const order = orders.find((o) => o.id === orderId)
+    const isConfirm = newStatus === 'confirmed' && order
 
-    if (error) {
-      console.error('Failed to update status:', error)
-      return
+    if (isConfirm) {
+      const items = (order.items_json ?? []) as any[]
+      const stockUpdates = items
+        .map((it) => ({ id: it.id, qty: typeof it.quantity === 'number' ? it.quantity : 1 }))
+        .filter((it) => it.id)
+
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus, confirmed_at: new Date().toISOString() })
+        .eq('id', orderId)
+
+      if (error) {
+        console.error('Failed to confirm order:', error)
+        return
+      }
+
+      if (stockUpdates.length) {
+        await Promise.all(
+          stockUpdates.map((it) =>
+            (supabase as any).rpc('decrement_stock', {
+              p_product_id: it.id,
+              p_qty: it.qty,
+              p_store_id: order.store_id,
+            }),
+          ),
+        )
+      }
+    } else {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+
+      if (error) {
+        console.error('Failed to update status:', error)
+        return
+      }
     }
 
-    setOrders(prev => prev.map(o => 
-      o.id === orderId ? { ...o, status: newStatus } : o
-    ))
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)))
     if (selectedOrder?.id === orderId) {
       setSelectedOrder({ ...selectedOrder, status: newStatus })
     }
@@ -91,7 +121,7 @@ export default function OrdersPage() {
       pending: 'confirmed',
       confirmed: 'shipped',
       shipped: 'delivered',
-      delivered: 'delivered'
+      delivered: 'delivered',
     }
     return flow[current] || null
   }
@@ -100,7 +130,7 @@ export default function OrdersPage() {
     pending: '#e8601a',
     confirmed: '#18b96a',
     shipped: '#2d5be3',
-    delivered: '#888'
+    delivered: '#888',
   }
 
   return (
@@ -115,7 +145,7 @@ export default function OrdersPage() {
       </div>
 
       <div style={{ marginBottom: 24, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {['all', 'pending', 'confirmed', 'shipped', 'delivered'].map(status => (
+        {['all', 'pending', 'confirmed', 'shipped', 'delivered'].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -128,7 +158,7 @@ export default function OrdersPage() {
               fontSize: 13,
               fontWeight: 500,
               cursor: 'pointer',
-              textTransform: 'capitalize'
+              textTransform: 'capitalize',
             }}
           >
             {status}
@@ -141,8 +171,8 @@ export default function OrdersPage() {
       ) : orders.length === 0 ? (
         <EmptyState />
       ) : (
-        <OrdersTable 
-          orders={orders} 
+        <OrdersTable
+          orders={orders}
           statusColor={statusColor}
           onRowClick={setSelectedOrder}
           onStatusChange={updateOrderStatus}
@@ -151,11 +181,11 @@ export default function OrdersPage() {
       )}
 
       {selectedOrder && (
-        <OrderDetailModal 
+        <OrderDetailModal
           order={selectedOrder}
           statusColor={statusColor}
           onClose={() => setSelectedOrder(null)}
-          onStatusChange={(newStatus: string) => {
+          onStatusChange={(newStatus) => {
             updateOrderStatus(selectedOrder.id, newStatus)
             setSelectedOrder({ ...selectedOrder, status: newStatus })
           }}
@@ -166,13 +196,22 @@ export default function OrdersPage() {
   )
 }
 
-function OrdersTable({ 
-  orders, 
-  statusColor, 
-  onRowClick, 
-  onStatusChange, 
-  nextStatus 
-}: { 
+function EmptyState() {
+  return (
+    <div style={{ textAlign: 'center', padding: 60, color: '#888' }}>
+      <p style={{ fontSize: 16, fontWeight: 600 }}>No orders yet</p>
+      <p style={{ fontSize: 14, marginTop: 8 }}>Orders will appear here once customers start buying.</p>
+    </div>
+  )
+}
+
+function OrdersTable({
+  orders,
+  statusColor,
+  onRowClick,
+  onStatusChange,
+  nextStatus,
+}: {
   orders: Order[]
   statusColor: Record<string, string>
   onRowClick: (order: Order) => void
@@ -180,21 +219,26 @@ function OrdersTable({
   nextStatus: (status: string) => string | null
 }) {
   return (
-    <div style={{ 
-      background: 'white', 
-      border: '1px solid rgba(17,17,20,0.06)',
-      borderRadius: 16, overflow: 'hidden'
-    }}>
+    <div
+      style={{
+        background: 'white',
+        border: '1px solid rgba(17,17,20,0.06)',
+        borderRadius: 16,
+        overflow: 'hidden',
+      }}
+    >
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ 
-            background: '#fafafa', 
-            fontSize: 11, 
-            color: '#888',
-            textTransform: 'uppercase', 
-            letterSpacing: 0.5,
-            borderBottom: '1px solid rgba(17,17,20,0.06)'
-          }}>
+          <tr
+            style={{
+              background: '#fafafa',
+              fontSize: 11,
+              color: '#888',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              borderBottom: '1px solid rgba(17,17,20,0.06)',
+            }}
+          >
             <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>Customer</th>
             <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>Status</th>
             <th style={{ padding: 16, textAlign: 'right', fontWeight: 600 }}>Total</th>
@@ -203,28 +247,30 @@ function OrdersTable({
           </tr>
         </thead>
         <tbody>
-          {orders.map(order => (
-            <tr 
-              key={order.id} 
+          {orders.map((order) => (
+            <tr
+              key={order.id}
               onClick={() => onRowClick(order)}
-              style={{ 
+              style={{
                 borderBottom: '1px solid rgba(17,17,20,0.04)',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               <td style={{ padding: 16, fontWeight: 600, fontSize: 14, color: '#111' }}>
                 {order.customer_name || '—'}
               </td>
               <td style={{ padding: 16 }}>
-                <span style={{ 
-                  fontSize: 10, 
-                  padding: '4px 10px', 
-                  borderRadius: 6,
-                  fontWeight: 600, 
-                  letterSpacing: 0.5,
-                  background: `${statusColor[order.status] ?? '#888'}12`,
-                  color: statusColor[order.status] ?? '#888'
-                }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    letterSpacing: 0.5,
+                    background: `${statusColor[order.status] ?? '#888'}12`,
+                    color: statusColor[order.status] ?? '#888',
+                  }}
+                >
                   {order.status}
                 </span>
               </td>
@@ -250,7 +296,7 @@ function OrdersTable({
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: 'pointer',
-                      textTransform: 'capitalize'
+                      textTransform: 'capitalize',
                     }}
                   >
                     Mark {nextStatus(order.status)}
@@ -267,13 +313,13 @@ function OrdersTable({
   )
 }
 
-function OrderDetailModal({ 
-  order, 
-  statusColor, 
-  onClose, 
-  onStatusChange, 
-  nextStatus 
-}: { 
+function OrderDetailModal({
+  order,
+  statusColor,
+  onClose,
+  onStatusChange,
+  nextStatus,
+}: {
   order: Order
   statusColor: Record<string, string>
   onClose: () => void
@@ -281,7 +327,7 @@ function OrderDetailModal({
   nextStatus: (status: string) => string | null
 }) {
   return (
-    <div 
+    <div
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -290,10 +336,10 @@ function OrderDetailModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000
+        zIndex: 1000,
       }}
     >
-      <div 
+      <div
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'white',
@@ -302,7 +348,7 @@ function OrderDetailModal({
           maxWidth: 500,
           width: '90%',
           maxHeight: '80vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -314,7 +360,7 @@ function OrderDetailModal({
               border: 'none',
               fontSize: 24,
               cursor: 'pointer',
-              color: '#888'
+              color: '#888',
             }}
           >
             ×
@@ -322,105 +368,75 @@ function OrderDetailModal({
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <span style={{ 
-            fontSize: 10, 
-            padding: '4px 10px', 
-            borderRadius: 6,
-            fontWeight: 600, 
-            letterSpacing: 0.5,
-            background: `${statusColor[order.status] ?? '#888'}12`,
-            color: statusColor[order.status] ?? '#888'
-          }}>
-            {order.status}
-          </span>
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 8, textTransform: 'uppercase' }}>Customer</h3>
-          <p style={{ color: '#111', fontSize: 14, margin: '0 0 4px' }}>{order.customer_name || '—'}</p>
-          {order.customer_phone && <p style={{ color: '#666', fontSize: 13, margin: 0 }}>{order.customer_phone}</p>}
-          {order.customer_email && <p style={{ color: '#666', fontSize: 13, margin: 0 }}>{order.customer_email}</p>}
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 8, textTransform: 'uppercase' }}>Items</h3>
-          <div style={{ border: '1px solid rgba(17,17,20,0.06)', borderRadius: 12, overflow: 'hidden' }}>
-            {order.items_json?.map((item, idx) => (
-              <div 
-                key={idx}
-                style={{ 
-                  padding: 12,
-                  borderBottom: idx !== (order.items_json?.length ?? 0) - 1 ? '1px solid rgba(17,17,20,0.04)' : 'none',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 14
-                }}
-              >
-                <span style={{ color: '#111', fontWeight: 500 }}>{item.name || 'Product'}</span>
-                <span style={{ color: '#666' }}>x{item.quantity || 1}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          padding: '16px 0',
-          borderTop: '1px solid rgba(17,17,20,0.06)',
-          marginBottom: 24
-        }}>
-          <span style={{ fontSize: 14, color: '#888' }}>Total</span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>{order.total} TND</span>
-        </div>
-
-        {nextStatus(order.status) ? (
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => onStatusChange(nextStatus(order.status)!)}
+          <p>
+            <strong>Customer:</strong> {order.customer_name || '—'}
+          </p>
+          <p>
+            <strong>Phone:</strong> {order.customer_phone || '—'}
+          </p>
+          <p>
+            <strong>Status:</strong>{' '}
+            <span
               style={{
-                padding: '10px 20px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#111',
-                color: 'white',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                textTransform: 'capitalize'
+                fontSize: 10,
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontWeight: 600,
+                background: `${statusColor[order.status] ?? '#888'}12`,
+                color: statusColor[order.status] ?? '#888',
               }}
             >
-              Mark {nextStatus(order.status)}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
+              {order.status}
+            </span>
+          </p>
+          <p>
+            <strong>Total:</strong> {order.total} TND
+          </p>
+          <p>
+            <strong>Date:</strong>{' '}
+            {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
 
-function EmptyState() {
-  return (
-    <div style={{ 
-      background: 'white', 
-      border: '1px solid rgba(17,17,20,0.06)',
-      borderRadius: 16, padding: 60, textAlign: 'center',
-      maxWidth: 400, margin: '0 auto'
-    }}>
-      <div style={{ 
-        width: 72, height: 72, borderRadius: 16, background: '#f8f5ef',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '0 auto 20px', fontSize: 32
-      }}>
-        📭
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Items</h3>
+          {(order.items_json ?? []).map((item: any, idx: number) => (
+            <div
+              key={idx}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '8px 0',
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+              }}
+            >
+              <span>{item.name ?? 'Item'}</span>
+              <span>
+                {item.quantity ?? 1} × {item.price ?? 0} TND
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {nextStatus(order.status) && (
+          <button
+            onClick={() => onStatusChange(nextStatus(order.status)!)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: 8,
+              border: 'none',
+              background: '#111',
+              color: 'white',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Mark {nextStatus(order.status)}
+          </button>
+        )}
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#111' }}>
-        No orders yet
-      </h3>
-      <p style={{ color: '#888', fontSize: 14, margin: 0, lineHeight: 1.6 }}>
-        Share your store link to receive orders
-      </p>
     </div>
   )
 }

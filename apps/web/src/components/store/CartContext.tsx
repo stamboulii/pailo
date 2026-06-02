@@ -8,6 +8,7 @@ export interface CartItem {
   price: number
   emoji: string
   quantity: number
+  availableStock: number
 }
 
 interface CartState {
@@ -16,7 +17,7 @@ interface CartState {
 }
 
 interface CartContextValue extends CartState {
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (item: { id: string; name: string; price: number; emoji: string; availableStock: number }) => void
   removeItem: (id: string) => void
   setQuantity: (id: string, qty: number) => void
   openCart: () => void
@@ -36,7 +37,12 @@ function loadCart(): CartItem[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as CartItem[]
+    const parsed = JSON.parse(raw) as CartItem[]
+    return parsed.map((item) => ({
+      ...item,
+      quantity: item.quantity ?? 1,
+      availableStock: item.availableStock ?? 99,
+    }))
   } catch {
     return []
   }
@@ -59,15 +65,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     saveCart(items)
   }, [items])
 
-  const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
+  const addItem = useCallback((item: { id: string; name: string; price: number; emoji: string; availableStock?: number }) => {
+    const stock = item.availableStock ?? 99
     setItems((prev) => {
       const found = prev.find((p) => p.id === item.id)
       if (found) {
-        return prev.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + 1 } : p
-        )
+        const nextQty = Math.min(found.quantity + 1, stock)
+        return prev.map((p) => (p.id === item.id ? { ...p, quantity: nextQty, availableStock: stock } : p))
       }
-      return [...prev, { ...item, quantity: 1 }]
+      return [...prev, { ...item, quantity: 1, availableStock: stock }]
     })
   }, [])
 
@@ -76,12 +82,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setQuantity = useCallback((id: string, qty: number) => {
-    if (qty <= 0) {
-      setItems((prev) => prev.filter((p) => p.id !== id))
-      return
-    }
     setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, quantity: qty } : p))
+      prev.map((p) => {
+        if (p.id !== id) return p
+        const safeStock = Number.isFinite(p.availableStock) ? p.availableStock : 99
+        const next = Number.isFinite(qty) ? qty : p.quantity
+        const clamped = Math.max(0, Math.min(next, safeStock))
+        if (clamped === 0) return null
+        return { ...p, quantity: clamped }
+      }).filter(Boolean) as CartItem[]
     )
   }, [])
 
